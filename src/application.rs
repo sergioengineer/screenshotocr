@@ -68,21 +68,15 @@ impl ApplicationInstance {
                     image::DynamicImage::ImageRgba8(image_buffer);
                 let img = rusty_tesseract::Image::from_dynamic_image(&dynamic_image).unwrap();
                 let my_args = rusty_tesseract::Args {
-                    //model language (tesseract default = 'eng')
-                    //available languages can be found by running 'rusty_tesseract::get_tesseract_langs()'
                     lang: "eng".to_owned(),
-
-                    //map of config variables
-                    //this example shows a whitelist for the normal alphabet. Multiple arguments are allowed.
-                    //available arguments can be found by running 'rusty_tesseract::get_tesseract_config_parameters()'
                     config_variables: std::collections::HashMap::from([(
                         "tessedit_char_whitelist".into(),
-                        "éãúabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:- "
+                        "éãúabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-_ ();,.[]{}´'\"`!-=+*/%$#@&|\\/<>"
                             .into(),
                     )]),
-                    dpi: Some(150), // specify DPI for input image
-                    psm: Some(6), // define page segmentation mode 6 (i.e. "Assume a single uniform block of text")
-                    oem: Some(3), // define optical character recognition mode 3 (i.e. "Default, based on what is available")
+                    dpi: Some(150),
+                    psm: Some(6),
+                    oem: Some(3),
                 };
                 let output = rusty_tesseract::image_to_string(&img, &my_args).unwrap();
 
@@ -90,10 +84,6 @@ impl ApplicationInstance {
                 let mut clip = arboard::Clipboard::new().unwrap();
                 clip.set_text(output).unwrap();
                 self.window.close();
-
-                // let clipboard = gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD);
-                // clipboard.set_text(&output);
-                // clipboard.store();
             }
         }
     }
@@ -141,9 +131,9 @@ fn adjust_features_vec_size(instance: Arc<ApplicationInstance>) -> Arc<Applicati
 }
 
 fn draw_background_screenshot(instance: Arc<ApplicationInstance>) -> Arc<ApplicationInstance> {
-    let screenshot = instance.screenshot.clone();
+    let inst = instance.clone();
     let _handler_id = instance.window.connect_draw(move |_, context| {
-        context.set_source_pixbuf(&screenshot, 0., 0.);
+        context.set_source_pixbuf(inst.screenshot.as_ref(), 0., 0.);
         let _ = context.paint();
         glib::Propagation::Proceed
     });
