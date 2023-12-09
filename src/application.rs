@@ -1,6 +1,5 @@
 use crate::features;
 use crate::types;
-use gtk;
 use gtk::gdk;
 use gtk::gdk_pixbuf;
 use gtk::glib;
@@ -37,11 +36,11 @@ impl ApplicationInstance {
                 )
                 .unwrap();
 
-                let start_x = *vec![area.start.x, area.end.x]
+                let start_x = *[area.start.x, area.end.x]
                     .iter()
                     .min_by(|a, b| a.total_cmp(b))
                     .unwrap();
-                let start_y = *vec![area.start.y, area.end.y]
+                let start_y = *[area.start.y, area.end.y]
                     .iter()
                     .min_by(|a, b| a.total_cmp(b))
                     .unwrap();
@@ -113,7 +112,7 @@ pub fn generate_window(application: &gtk::Application) -> Option<gtk::Applicatio
 fn window_to_instance(window: gtk::ApplicationWindow) -> Arc<ApplicationInstance> {
     let instance = ApplicationInstance {
         screenshot: get_screenshot(),
-        window: window,
+        window,
         features: Features::default(),
     };
 

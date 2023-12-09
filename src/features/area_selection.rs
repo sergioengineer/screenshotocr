@@ -5,13 +5,12 @@ use gtk;
 use gtk::cairo;
 use gtk::glib;
 use gtk::prelude::WidgetExt;
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 struct Selecting(bool);
 pub struct AreaSelectionFeature {
     selecting: Arc<RwLock<Selecting>>,
-    selected_area: Arc<RwLock<Option<Rc<types::Area>>>>,
+    selected_area: Arc<RwLock<Option<types::Area>>>,
 }
 
 impl Default for AreaSelectionFeature {
@@ -58,12 +57,12 @@ fn draw_selected_area(
             return glib::Propagation::Proceed;
         }
 
-        let area = feature.selected_area.read().unwrap().clone().unwrap();
-        let start_x = *vec![area.start.x, area.end.x]
+        let area = feature.selected_area.read().unwrap().unwrap();
+        let start_x = *[area.start.x, area.end.x]
             .iter()
             .min_by(|a, b| a.total_cmp(b))
             .unwrap();
-        let start_y = *vec![area.start.y, area.end.y]
+        let start_y = *[area.start.y, area.end.y]
             .iter()
             .min_by(|a, b| a.total_cmp(b))
             .unwrap();
@@ -81,19 +80,18 @@ fn record_area_selection(
     feature: Arc<AreaSelectionFeature>,
 ) -> impl Fn(&gtk::ApplicationWindow, &gtk::gdk::EventMotion) -> glib::Propagation {
     return move |app, event| {
-        let mut selecting = feature.selecting.write().unwrap();
-        let original_area = &feature.selected_area.clone().read().unwrap().clone();
         let mut area = feature.selected_area.write().unwrap();
+        let mut selecting = feature.selecting.write().unwrap();
 
-        let start = if selecting.0 == false || original_area.is_none() {
+        let start = if !selecting.0 || area.is_none() {
             types::Position {
                 x: event.position().0,
                 y: event.position().1,
             }
         } else {
             types::Position {
-                x: original_area.as_ref().unwrap().start.x,
-                y: original_area.as_ref().unwrap().start.y,
+                x: area.as_ref().unwrap().start.x,
+                y: area.as_ref().unwrap().start.y,
             }
         };
         let end = types::Position {
@@ -101,7 +99,7 @@ fn record_area_selection(
             y: event.position().1,
         };
 
-        let _ = area.insert(Rc::new(types::Area { start, end }));
+        let _ = area.insert(types::Area { start, end });
         selecting.0 = true;
 
         app.queue_draw();
@@ -115,11 +113,12 @@ fn stop_recording_area_selection(
 ) -> impl Fn(&gtk::ApplicationWindow, &gtk::gdk::EventButton) -> glib::Propagation {
     return move |app, _event| {
         let mut selecting = feature.selecting.write().unwrap();
-        let area_option = feature.selected_area.read().unwrap().clone();
+        let area_read = feature.selected_area.read().unwrap();
+        let area_option = area_read.as_ref();
         selecting.0 = false;
 
-        if let Some(area) = area_option {
-            instance.dispatch(application::Event::AreaSelectionCompleted(*area))
+        if let Some(&area) = area_option {
+            instance.dispatch(application::Event::AreaSelectionCompleted(area))
         }
         app.queue_draw();
         gtk::glib::Propagation::Proceed
