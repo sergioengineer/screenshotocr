@@ -19,6 +19,9 @@ pub struct ApplicationInstance {
     pub features: Features,
 }
 
+unsafe impl Send for ApplicationInstance {}
+unsafe impl Sync for ApplicationInstance {}
+
 pub enum Event {
     AreaSelectionCompleted(types::Area),
 }
@@ -63,15 +66,15 @@ impl ApplicationInstance {
                     buffer,
                 )
                 .unwrap();
+
                 let dynamic_image: image::DynamicImage =
                     image::DynamicImage::ImageRgba8(image_buffer);
                 let img = rusty_tesseract::Image::from_dynamic_image(&dynamic_image).unwrap();
                 let my_args = rusty_tesseract::Args {
                     lang: "eng".to_owned(),
                     config_variables: std::collections::HashMap::from([(
-                        "tessedit_char_whitelist".into(),
-                        "éãúabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-_ ();,.[]{}´'\"`!-=+*/%$#@&|\\/<>"
-                            .into(),
+                       "tessedit_char_whitelist".to_owned(),
+                       "éãúabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-_ ();,.[]{}´'\"`!-=+*/%$#@&|\\/<>	".to_owned()
                     )]),
                     dpi: Some(150),
                     psm: Some(6),
